@@ -4,6 +4,14 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Lets other workflows (e.g. the scheduled rules updater) trigger a rebuild.
+  workflow_call:
+    inputs:
+      ref:
+        description: Git ref or SHA to build and deploy
+        required: false
+        type: string
+        default: ""
 
 # Allow the GITHUB_TOKEN to deploy to Pages.
 permissions:
@@ -22,6 +30,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # For workflow_call we build the ref passed in (the just-pushed data
+          # commit); for push/dispatch this is empty and checkout uses the event SHA.
+          ref: ${{ inputs.ref || github.sha }}
 
       - name: Setup Node
         uses: actions/setup-node@v4

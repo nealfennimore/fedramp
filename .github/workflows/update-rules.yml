@@ -1,0 +1,87 @@
+name: Update FedRAMP rules
+
+# Polls the upstream FedRAMP consolidated rules datafile, and when it changes,
+# commits the new copy and rebuilds/redeploys the site.
+on:
+  schedule:
+    # Daily at 09:23 UTC (offset from the hour to avoid scheduler congestion).
+    - cron: "23 9 * * *"
+  workflow_dispatch:
+
+# contents:write to push the data update; pages/id-token for the called deploy.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update-rules
+  cancel-in-progress: false
+
+env:
+  SOURCE_URL: https://raw.githubusercontent.com/FedRAMP/rules/refs/heads/main/fedramp-consolidated-rules.json
+  DATA_FILE: fedramp-consolidated-rules.json
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      sha: ${{ steps.push.outputs.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch upstream and compare hashes
+        id: check
+        run: |
+          set -euo pipefail
+          curl -fsSL "$SOURCE_URL" -o upstream.json
+
+          # Reject anything that isn't valid JSON (e.g. an error page) before
+          # it can overwrite the committed datafile.
+          if ! jq empty upstream.json >/dev/null 2>&1; then
+            echo "::error::Upstream payload is not valid JSON; aborting."
+            exit 1
+          fi
+
+          new_hash="$(sha256sum upstream.json | awk '{print $1}')"
+          old_hash="$(sha256sum "$DATA_FILE" | awk '{print $1}')"
+          echo "old=$old_hash"
+          echo "new=$new_hash"
+
+          if [ "$new_hash" != "$old_hash" ]; then
+            mv upstream.json "$DATA_FILE"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Rules datafile changed — committing update."
+          else
+            rm upstream.json
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Rules datafile unchanged."
+          fi
+
+      - name: Commit and push
+        id: push
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          version="$(jq -r '.info.version // "unknown"' "$DATA_FILE")"
+          git add "$DATA_FILE"
+          git commit -m "chore(data): update FedRAMP consolidated rules to ${version}"
+          git push
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  # Rebuild and redeploy the just-pushed commit. Pushing with GITHUB_TOKEN does
+  # not trigger deploy.yml's push event, so we invoke it explicitly here.
+  deploy:
+    needs: update
+    if: needs.update.outputs.changed == 'true'
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    uses: ./.github/workflows/deploy.yml
+    with:
+      ref: ${{ needs.update.outputs.sha }}
