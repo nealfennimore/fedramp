@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { ForceBadge } from "./ForceBadge";
+import { withBasePath } from "@/lib/basePath";
 
 interface Entry {
   id: string;
@@ -44,7 +45,7 @@ export function SearchClient() {
 
   useEffect(() => {
     let active = true;
-    fetch("/search-index.json")
+    fetch(withBasePath("/search-index.json"))
       .then((r) => r.json())
       .then((data: Entry[]) => active && setIndex(data))
       .catch(() => active && setIndex([]));

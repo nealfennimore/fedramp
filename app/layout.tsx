@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { ServiceWorker } from "@/components/ServiceWorker";
 import { getData } from "@/lib/data";
 
 const data = getData();
@@ -19,6 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
+        <ServiceWorker />
         <Header version={data.info.version} />
         <main className="mx-auto min-h-[70vh] max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{children}</main>
         <footer className="border-t border-slate-200 bg-white">
