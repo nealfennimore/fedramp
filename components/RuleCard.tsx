@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Rule } from "@/lib/types";
 import { definitionIdForTerm, ruleHref } from "@/lib/data";
 import { ForceBadge } from "./ForceBadge";
+import { ControlLink } from "./ControlLink";
 import { InlineRich, RichText } from "./RichText";
 
 function TypeChip({ type }: { type: string }) {
@@ -167,6 +168,16 @@ export function RuleCard({ rule }: { rule: Rule }) {
       {rule.corrective_actions && rule.corrective_actions.length > 0 && (
         <Section title="Corrective Actions">
           <Bullets items={rule.corrective_actions} />
+        </Section>
+      )}
+
+      {rule.rev5_controls_list && rule.rev5_controls_list.length > 0 && (
+        <Section title="Rev 5 Controls">
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {rule.rev5_controls_list.map((c) => (
+              <ControlLink key={c} id={c} display="canonical" />
+            ))}
+          </div>
         </Section>
       )}
 

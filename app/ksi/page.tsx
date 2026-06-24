@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getData, definitionIdForTerm } from "@/lib/data";
 import { InlineRich } from "@/components/RichText";
+import { ControlLink } from "@/components/ControlLink";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -70,12 +71,7 @@ export default function KsiPage() {
                       </h4>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {ind.controls.map((c) => (
-                          <span
-                            key={c}
-                            className="rounded-md bg-slate-100 px-2 py-0.5 font-mono text-xs font-medium uppercase text-slate-600"
-                          >
-                            {c}
-                          </span>
+                          <ControlLink key={c} id={c} display="canonical" />
                         ))}
                       </div>
                     </div>

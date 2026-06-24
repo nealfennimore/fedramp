@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getData } from "@/lib/data";
 import { InlineRich } from "@/components/RichText";
+import { parseControlId, nist80053Url } from "@/lib/nist";
 
 export const metadata: Metadata = {
   title: "Control Parameters",
@@ -51,7 +52,31 @@ export default function ControlsPage() {
                   id={ctl.id}
                   className="scroll-mt-24 rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <h3 className="font-mono text-sm font-bold uppercase text-slate-900">{ctl.id}</h3>
+                  {(() => {
+                    const parsed = parseControlId(ctl.id);
+                    return parsed ? (
+                      <a
+                        href={nist80053Url(parsed)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`View NIST SP 800-53 ${parsed.label} ↗`}
+                        className="group/ctl inline-flex items-center gap-1.5 font-mono text-sm font-bold uppercase text-slate-900 hover:text-brand-700"
+                      >
+                        {parsed.label}
+                        <svg
+                          className="h-3.5 w-3.5 text-slate-300 transition group-hover/ctl:text-brand-500"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                          aria-hidden
+                        >
+                          <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                          <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <h3 className="font-mono text-sm font-bold uppercase text-slate-900">{ctl.id}</h3>
+                    );
+                  })()}
 
                   {ctl.parameters.length > 0 && (
                     <div className="mt-3 overflow-hidden rounded-lg border border-slate-200">
